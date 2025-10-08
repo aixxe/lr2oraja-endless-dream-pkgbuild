@@ -1,0 +1,22 @@
+# Maintainer: aixxe <me@aixxe.net>
+source "$(dirname "${BASH_SOURCE[0]}")/PKGBUILD.inc"
+pkgname="${_pkgbase}"
+pkgver=0.3.0
+provides=()
+conflicts=()
+source=("${_pkgbase}::git+https://github.com/seraxis/${_pkgbase}.git#tag=v${pkgver}"
+        "${_common_sources[@]}")
+sha256sums=('SKIP'
+            "${_common_sha256sums[@]}")
+
+prepare() {
+  _prepare
+}
+
+build() {
+  _build
+}
+
+package() {
+  _package
+}

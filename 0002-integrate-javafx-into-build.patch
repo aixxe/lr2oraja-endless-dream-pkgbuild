@@ -47,29 +47,29 @@ index 00000000..403661df
 +    }
 +}
 diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
-index 924a1d20..e87fe6d1 100644
+index 924a1d20..196dca21 100644
 --- a/gradle/libs.versions.toml
 +++ b/gradle/libs.versions.toml
-@@ -1,6 +1,7 @@
- [versions]
- beatoraja = "0.8.8-endlessdream"
- endlessdream = "pre0.3.1"
+@@ -9,6 +9,7 @@ imgui = "1.86.12"
+ javacv = "1.5.9"
+ ffmpeg = "6.0-1.5.9"
+ jflac = "1.5.2"
 +javafx = "17.0.10"
- kotlin = "1.9.20"
- gdx = "1.13.0"
- gdx-controllers = "2.2.3"
-@@ -25,6 +26,11 @@ guacamole = "0.3.5"
- kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
- kotlin-serialization-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
+ commons-codec = "1.15"
+ commons-compress = "1.26.1"
+ commons-dbutils = "1.6"
+@@ -58,6 +59,11 @@ ffmpeg = { group = "org.bytedeco", name = "ffmpeg", version.ref = "ffmpeg" }
+ jflac = { group = "org.jflac", name = "jflac-codec", version.ref = "jflac" }
+ commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commons-codec" }
  
 +javafx-base = { group = "org.openjfx", name = "javafx-base", version.ref = "javafx" }
 +javafx-controls = { group = "org.openjfx", name = "javafx-controls", version.ref = "javafx" }
 +javafx-fxml = { group = "org.openjfx", name = "javafx-fxml", version.ref = "javafx" }
 +javafx-graphics = { group = "org.openjfx", name = "javafx-graphics", version.ref = "javafx" }
 +
- gdx-core = { group = "com.badlogicgames.gdx", name = "gdx", version.ref = "gdx" }
- gdx-backend = { group = "com.badlogicgames.gdx", name = "gdx-backend-lwjgl3", version.ref = "gdx" }
- gdx-freetype = { group = "com.badlogicgames.gdx", name = "gdx-freetype", version.ref = "gdx" }
+ commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commons-compress" }
+ commons-dbutils = { group = "commons-dbutils", name = "commons-dbutils", version.ref = "commons-dbutils" }
+ xz = { group = "org.tukaani", name = "xz", version.ref = "xz" }
 @@ -76,4 +82,5 @@ lwjgl3 = ["lwjgl", "lwjgl-jemalloc", "lwjgl-glfw", "lwjgl-openal", "lwjgl-opengl
  imgui = ["imgui", "imgui-lwjgl3", "imgui-linux", "imgui-windows", "imgui-macos"]
  ffmpeg = ["javacv", "javacpp", "ffmpeg"]

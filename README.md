@@ -4,7 +4,7 @@ Yet another Arch Linux package for [LR2oraja Endless Dream](https://github.com/s
 
 ### Differences to the [AUR package](https://aur.archlinux.org/packages/lr2oraja-endlessdream)
 
-- Currently only targets latest Git commit
+- Provides stable release and `-git` variants
 - Installs to standard `/usr/share` directories
 - Builds game and native JPortAudio library from source
 - Launching from desktop entry no longer opens a terminal
@@ -19,10 +19,16 @@ Ensure `JAVA_HOME` is set to a compatible JDK, then run `makepkg`
 
 ```bash
 pacman --sync --refresh --sysupgrade --noconfirm jdk17-openjdk
+
+# lr2oraja-endlessdream-git
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm
+
+# lr2oraja-endlessdream
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm -p PKGBUILD.release
 ```
 
 Alternatively, grab a pre-built version from CI artifacts:
+- [lr2oraja-endlessdream](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/lr2oraja-endlessdream/master)
 - [lr2oraja-endlessdream-git](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/lr2oraja-endlessdream-git/master)
 
 ### Usage
