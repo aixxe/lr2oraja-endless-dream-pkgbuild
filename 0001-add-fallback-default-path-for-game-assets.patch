@@ -1,0 +1,209 @@
+From 24583e116ab8e1dc9cc2175c8657f42cdfe82c5d Mon Sep 17 00:00:00 2001
+From: llm96 <llm96@fervidex.net>
+Date: Wed, 8 Oct 2025 18:58:48 +0100
+Subject: Add fallback default path for game assets
+
+---
+ core/src/bms/player/beatoraja/Config.java     | 39 +++++++++++++++++--
+ .../player/beatoraja/SystemSoundManager.java  |  2 +-
+ .../beatoraja/audio/AbstractAudioDriver.java  |  3 +-
+ .../beatoraja/modmenu/ImGuiRenderer.java      |  3 +-
+ .../player/beatoraja/select/BarManager.java   |  4 +-
+ .../bms/player/beatoraja/skin/SkinLoader.java | 12 +++---
+ 6 files changed, 50 insertions(+), 13 deletions(-)
+
+diff --git a/core/src/bms/player/beatoraja/Config.java b/core/src/bms/player/beatoraja/Config.java
+index 9b66dc95..cf67cf3e 100644
+--- a/core/src/bms/player/beatoraja/Config.java
++++ b/core/src/bms/player/beatoraja/Config.java
+@@ -29,6 +29,11 @@ public class Config implements Validatable {
+ 	 * コンフィグパス(UTF-8)
+ 	 */
+ 	static final Path configpath = Paths.get("config_sys.json");	
++	
++	/**
++	 * Fallback search directory for default assets
++	 */
++	private static Path defaultDir = null;	
+ 
+ 	/**
+ 	 * 選択中のプレイヤー名
+@@ -194,6 +199,34 @@ public class Config implements Validatable {
+ 			"https://excln.github.io/table24k/table.html",
+ 	};
+ 
++	public static Path getDefaultDir() {
++		if (defaultDir == null) {
++			String env = System.getenv("BEATORAJA_INSTALL_DIR");
++			if (env != null && !env.isEmpty()) {
++				Path p = Paths.get(env);
++				if (Files.exists(p) && Files.isDirectory(p)) {
++					defaultDir = p;
++				}
++			}
++		}
++		return defaultDir;
++	}
++
++	public static Path resolvePath(String path) {
++		Path userPath = Paths.get(path);
++		if (Files.exists(userPath)) {
++			return userPath;
++		}
++		Path defaultDir = getDefaultDir();
++		if (defaultDir != null) {
++			Path defaultPath = defaultDir.resolve(path);
++			if (Files.exists(defaultPath)) {
++				return defaultPath;
++			}
++		}
++		return userPath;
++	}
++
+ 	public Config() {
+ 	}
+ 
+@@ -513,7 +546,7 @@ public class Config implements Validatable {
+ 	}
+ 
+ 	public String getSkinpath() {
+-		return skinpath;
++		return resolvePath(skinpath).toString();
+ 	}
+ 
+ 	public void setSkinpath(String skinpath) {
+@@ -521,7 +554,7 @@ public class Config implements Validatable {
+ 	}
+ 
+ 	public String getSystemfontpath() {
+-		return systemfontpath;
++		return resolvePath(systemfontpath).toString();
+ 	}
+ 
+ 	public void setSystemfontpath(String systemfontpath) {
+@@ -529,7 +562,7 @@ public class Config implements Validatable {
+ 	}
+ 
+ 	public String getMessagefontpath() {
+-		return messagefontpath;
++		return resolvePath(messagefontpath).toString();
+ 	}
+ 
+ 	public void setMessagefontpath(String messagefontpath) {
+diff --git a/core/src/bms/player/beatoraja/SystemSoundManager.java b/core/src/bms/player/beatoraja/SystemSoundManager.java
+index a159a11b..2cc7d67f 100644
+--- a/core/src/bms/player/beatoraja/SystemSoundManager.java
++++ b/core/src/bms/player/beatoraja/SystemSoundManager.java
+@@ -104,7 +104,7 @@ public class SystemSoundManager {
+ 		if(p != null) {
+ 			paths.addAll(AudioDriver.getPaths(p.resolve(type.path).toString()));			
+ 		}
+-		paths.addAll(AudioDriver.getPaths(Paths.get("defaultsound").resolve(type.path).toString()));
++		paths.addAll(AudioDriver.getPaths(Config.resolvePath("defaultsound/" + type.path).toString()));
+ 		return paths.toArray(Path.class);
+ 	}
+ 	
+diff --git a/core/src/bms/player/beatoraja/audio/AbstractAudioDriver.java b/core/src/bms/player/beatoraja/audio/AbstractAudioDriver.java
+index 83d42ed4..110d2bd4 100644
+--- a/core/src/bms/player/beatoraja/audio/AbstractAudioDriver.java
++++ b/core/src/bms/player/beatoraja/audio/AbstractAudioDriver.java
+@@ -1,6 +1,7 @@
+ package bms.player.beatoraja.audio;
+ 
+ import bms.model.*;
++import bms.player.beatoraja.Config;
+ import bms.player.beatoraja.ResourcePool;
+ 
+ import java.nio.file.InvalidPathException;
+@@ -307,7 +308,7 @@ public abstract class AbstractAudioDriver<T> implements AudioDriver {
+ 				if (wavid < wavcount) {
+ 					p = dpath.resolve(wavlist[wavid]).toAbsolutePath();
+ 				} else {
+-					p = Paths.get("defaultsound/landmine.wav").toAbsolutePath();
++					p = Config.resolvePath("defaultsound/landmine.wav").toAbsolutePath();
+ 				}
+ 				for (Note note : waventry.getValue()) {
+ 					// 音切りあり・なし両方のデータが必要になるケースがある
+diff --git a/core/src/bms/player/beatoraja/modmenu/ImGuiRenderer.java b/core/src/bms/player/beatoraja/modmenu/ImGuiRenderer.java
+index 566e58d9..3a9fa817 100644
+--- a/core/src/bms/player/beatoraja/modmenu/ImGuiRenderer.java
++++ b/core/src/bms/player/beatoraja/modmenu/ImGuiRenderer.java
+@@ -1,5 +1,6 @@
+ package bms.player.beatoraja.modmenu;
+ 
++import bms.player.beatoraja.Config;
+ import bms.player.beatoraja.controller.Lwjgl3ControllerManager;
+ 
+ import com.badlogic.gdx.Gdx;
+@@ -191,7 +192,7 @@ public class ImGuiRenderer {
+ 
+     private static byte[] loadFromResources(String name) {
+         try {
+-            return Files.readAllBytes(Gdx.files.internal(name).file().toPath());
++            return Files.readAllBytes(Gdx.files.internal(Config.resolvePath(name).toString()).file().toPath());
+         } catch (IOException e) {
+             throw new RuntimeException(e);
+         }
+diff --git a/core/src/bms/player/beatoraja/select/BarManager.java b/core/src/bms/player/beatoraja/select/BarManager.java
+index 53691b1b..5e585a2a 100644
+--- a/core/src/bms/player/beatoraja/select/BarManager.java
++++ b/core/src/bms/player/beatoraja/select/BarManager.java
+@@ -241,7 +241,7 @@ public class BarManager {
+ 		try {
+ 			Json json = new Json();
+ 			CommandFolder[] cf = json.fromJson(CommandFolder[].class,
+-					new BufferedInputStream(Files.newInputStream(Paths.get("folder/default.json"))));
++					new BufferedInputStream(Files.newInputStream(Config.resolvePath("folder/default.json"))));
+ 			Stream.of(cf).forEach(folder -> l.add(createCommandBar(select, folder)));
+ 		} catch (Throwable e) {
+ 			e.printStackTrace();
+@@ -250,7 +250,7 @@ public class BarManager {
+ 		try {
+ 			ObjectMapper objectMapper = new ObjectMapper();
+ 			randomFolderList = objectMapper.readValue(
+-					new BufferedInputStream(Files.newInputStream(Paths.get("random/default.json"))),
++					new BufferedInputStream(Files.newInputStream(Config.resolvePath("random/default.json"))),
+ 					new TypeReference<List<RandomFolder>>() {
+ 					});
+ 		} catch (Throwable e) {
+diff --git a/core/src/bms/player/beatoraja/skin/SkinLoader.java b/core/src/bms/player/beatoraja/skin/SkinLoader.java
+index 4b621915..8d0c5bc3 100644
+--- a/core/src/bms/player/beatoraja/skin/SkinLoader.java
++++ b/core/src/bms/player/beatoraja/skin/SkinLoader.java
+@@ -52,19 +52,20 @@ public abstract class SkinLoader {
+     public static Skin load(MainState state, SkinType skinType, SkinConfig sc) {
+         final PlayerResource resource = state.resource;
+         try {
+-            if (sc.getPath().endsWith(".json")) {
++            String resolvedPath = Config.resolvePath(sc.getPath()).toString();
++            if (resolvedPath.endsWith(".json")) {
+                 JSONSkinLoader sl = new JSONSkinLoader(state, resource.getConfig());
+-                Skin skin = sl.loadSkin(Paths.get(sc.getPath()), skinType, sc.getProperties());
++                Skin skin = sl.loadSkin(Paths.get(resolvedPath), skinType, sc.getProperties());
+                 SkinLoader.resource.disposeOld();
+                 return skin;
+-            } else if (sc.getPath().endsWith(".luaskin")) {
++            } else if (resolvedPath.endsWith(".luaskin")) {
+                 LuaSkinLoader loader = new LuaSkinLoader(state, resource.getConfig());
+-                Skin skin = loader.loadSkin(Paths.get(sc.getPath()), skinType, sc.getProperties());
++                Skin skin = loader.loadSkin(Paths.get(resolvedPath), skinType, sc.getProperties());
+                 SkinLoader.resource.disposeOld();
+                 return skin;
+             } else {
+                 LR2SkinHeaderLoader loader = new LR2SkinHeaderLoader(resource.getConfig());
+-                SkinHeader header = loader.loadSkin(Paths.get(sc.getPath()), state, sc.getProperties());
++                SkinHeader header = loader.loadSkin(Paths.get(resolvedPath), state, sc.getProperties());
+                 LR2SkinCSVLoader dloader = LR2SkinCSVLoader.getSkinLoader(skinType,  header.getResolution(), resource.getConfig());
+                 header.setSourceResolution(dloader.src);
+                 header.setDestinationResolution(dloader.dst);
+@@ -86,6 +87,7 @@ public abstract class SkinLoader {
+     }
+ 
+     public static File getPath(String imagepath, ObjectMap<String, String> filemap) {
++        imagepath = Config.resolvePath(imagepath).toString();
+         File imagefile = new File(imagepath);
+         for (String key : filemap.keys()) {
+             if (imagepath.startsWith(key)) {
+-- 
+2.51.0
+

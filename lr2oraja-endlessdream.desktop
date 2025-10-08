@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=__PKGVER__
+Type=Application
+Name=LR2oraja Endless Dream
+Comment=A featureful fork of beatoraja
+Exec=/usr/bin/lr2oraja-endlessdream
+Icon=lr2oraja-endlessdream-icon
+Categories=Game;
