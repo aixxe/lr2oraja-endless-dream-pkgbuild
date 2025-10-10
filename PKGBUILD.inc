@@ -8,23 +8,57 @@ depends=('bash' 'java-runtime>=17')
 makedepends=('java-environment=17' 'portaudio' 'git' 'cmake' 'gcc')
 optdepends=('portaudio: enables low-latency audio output options'
             'gamescope: workaround for crashes on nvidia wayland environments')
+_javafx_version="17.0.10"
 _portaudio_java_commit="2ec5cc47d6f8abe85ddb09c34e69342bfe72c60b"
 _common_sources=("https://github.com/philburk/portaudio-java/archive/${_portaudio_java_commit}.tar.gz"
                  "${_pkgbase}.sh"
                  "${_pkgbase}.desktop"
-                 "${_pkgbase}-icon.png"
-                 "integrate-javafx-into-build.patch")
+                 "${_pkgbase}-icon.png")
 _common_sha256sums=('7a70d90d449fc9d91026c54e1d08303242749475ad20b30b5bfa45fc93f18043'
                     'SKIP'
                     'bfa611672d6926830edc33d7845ce1430b415cf42325f565e609dc6997dcb3f9'
-                    'fdbd37ff43aa6af20f9eb643bf271a77ef579014970a7a3dcecf78e65123d83d'
-                    'a7989e496f9c66ad256ccff658c72b788447d941db3bc71c4e6d7b9f01dc1b90')
+                    'fdbd37ff43aa6af20f9eb643bf271a77ef579014970a7a3dcecf78e65123d83d')
 
 _prepare() {
   cd "${srcdir}/${_pkgbase}"
   git submodule update --init --recursive
 
-  patch -Np1 -i "${srcdir}/integrate-javafx-into-build.patch"
+  # add JavaFX to [versions] in gradle/libs.versions.toml
+  sed -i "/^endlessdream = /a javafx = \"${_javafx_version}\"" gradle/libs.versions.toml
+  
+  # add JavaFX to [libraries] in gradle/libs.versions.toml
+  sed -i '/^gdx-core = /i \
+javafx-base = { group = "org.openjfx", name = "javafx-base", version.ref = "javafx" }\
+javafx-controls = { group = "org.openjfx", name = "javafx-controls", version.ref = "javafx" }\
+javafx-fxml = { group = "org.openjfx", name = "javafx-fxml", version.ref = "javafx" }\
+javafx-graphics = { group = "org.openjfx", name = "javafx-graphics", version.ref = "javafx" }\
+' gradle/libs.versions.toml
+  
+  # add JavaFX to [bundles] in gradle/libs.versions.toml
+  printf '\njavafx = ["javafx-base", "javafx-controls", "javafx-fxml", "javafx-graphics"]' >> gradle/libs.versions.toml
+  
+  # add JavaFX dependencies to core/build.gradle.kts
+  sed -i '/^dependencies {/a \
+    implementation(libs.bundles.javafx)\
+    \
+    implementation("org.openjfx:javafx-base:${libs.versions.javafx.get()}:linux")\
+    implementation("org.openjfx:javafx-controls:${libs.versions.javafx.get()}:linux")\
+    implementation("org.openjfx:javafx-fxml:${libs.versions.javafx.get()}:linux")\
+    implementation("org.openjfx:javafx-graphics:${libs.versions.javafx.get()}:linux")\
+' core/build.gradle.kts
+  
+  # create wrapper entrypoint for MainLoader
+  mkdir -p core/src/bms/player/beatoraja
+  cat > core/src/bms/player/beatoraja/MainLoaderEntrypoint.java << 'EOF'
+package bms.player.beatoraja;
+
+public class MainLoaderEntrypoint {
+
+    public static void main(String[] args) {
+        MainLoader.main(args);
+    }
+}
+EOF
 }
 
 _build() {
