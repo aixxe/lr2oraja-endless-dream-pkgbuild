@@ -12,6 +12,39 @@ export LD_LIBRARY_PATH="${BEATORAJA_INSTALL_DIR}/natives:${LD_LIBRARY_PATH:-}"
 export BEATORAJA_USER_DIR="${BEATORAJA_USER_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/${BEATORAJA_VARIANT}}"
 mkdir -p "${BEATORAJA_USER_DIR}" && cd "${BEATORAJA_USER_DIR}"
 
+# symlink default files to user directory
+setup_default_assets() {
+  local asset_dirs=('defaultsound' 'folder' 'font' 'random')
+
+  for dir in "${asset_dirs[@]}"; do
+    local src_dir="${BEATORAJA_INSTALL_DIR}/${dir}"
+    local dst_dir="${BEATORAJA_USER_DIR}/${dir}"
+    
+    if [[ -d "${src_dir}" ]]; then
+      mkdir -p "${dst_dir}"
+
+      for file in "${src_dir}"/*; do
+        [[ -e "${file}" ]] || continue
+        local filename=$(basename "${file}")
+        local dst_file="${dst_dir}/${filename}"
+
+        if [[ ! -e "${dst_file}" ]]; then
+          ln -s "${file}" "${dst_file}"
+        fi
+      done
+    fi
+  done
+
+  # symlink entire default skin directory
+  local skin_src="${BEATORAJA_INSTALL_DIR}/skin/default"
+  local skin_dst="${BEATORAJA_USER_DIR}/skin/default"
+
+  if [[ -d "${skin_src}" && ! -e "${skin_dst}" ]]; then
+    mkdir -p "${BEATORAJA_USER_DIR}/skin"
+    ln -s "${skin_src}" "${skin_dst}"
+  fi
+}
+
 # pull in additional java options from JDK_JAVA_OPTIONS
 build_java_options() {
   local options=(
@@ -30,6 +63,9 @@ build_java_options() {
 
   echo "${options[*]}"
 }
+
+# ensure required default files exist
+setup_default_assets
 
 # launch the game!
 JDK_JAVA_OPTIONS=$(build_java_options) \
