@@ -13,21 +13,18 @@ _common_sources=("https://github.com/philburk/portaudio-java/archive/${_portaudi
                  "${_pkgbase}.sh"
                  "${_pkgbase}.desktop"
                  "${_pkgbase}-icon.png"
-                 "integrate-javafx-into-build.patch"
-                 "https://patch-diff.githubusercontent.com/raw/seraxis/lr2oraja-endlessdream/pull/108.patch")
+                 "integrate-javafx-into-build.patch")
 _common_sha256sums=('7a70d90d449fc9d91026c54e1d08303242749475ad20b30b5bfa45fc93f18043'
-                    '10dfe13fe7794e9e05ec329f2d76f15312f77aca30ecdc536a573c2c570fb855'
+                    'SKIP'
                     'bfa611672d6926830edc33d7845ce1430b415cf42325f565e609dc6997dcb3f9'
                     'fdbd37ff43aa6af20f9eb643bf271a77ef579014970a7a3dcecf78e65123d83d'
-                    'a7989e496f9c66ad256ccff658c72b788447d941db3bc71c4e6d7b9f01dc1b90'
-                    'SKIP')
+                    'a7989e496f9c66ad256ccff658c72b788447d941db3bc71c4e6d7b9f01dc1b90')
 
 _prepare() {
   cd "${srcdir}/${_pkgbase}"
   git submodule update --init --recursive
 
   patch -Np1 -i "${srcdir}/integrate-javafx-into-build.patch"
-  patch -Np1 -i "${srcdir}/108.patch"
 }
 
 _build() {
