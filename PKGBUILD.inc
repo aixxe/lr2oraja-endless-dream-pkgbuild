@@ -37,7 +37,7 @@ _build() {
 
   # build native dependencies
   cd "${srcdir}/portaudio-java-${_portaudio_java_commit}"
-  cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DJAVA_HOME="${JAVA_HOME}" .
+  cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .
   cmake --build .
 
   # build game using gradle wrapper
