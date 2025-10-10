@@ -8,7 +8,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      git-build: ${{ steps.filter.outputs.git-build }}
+      release-build: ${{ steps.filter.outputs.release-build }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            git-build:
+              - 'PKGBUILD'
+              - 'PKGBUILD.inc'
+            release-build:
+              - 'PKGBUILD.release'
+              - 'PKGBUILD.inc'
+
   build:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.git-build == 'true'
+     || needs.detect-changes.outputs.release-build == 'true'
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
@@ -19,17 +43,30 @@ jobs:
           - variant: git
             pkgbuild: PKGBUILD
             artifact: lr2oraja-endlessdream-git
-        # - variant: release
-        #   pkgbuild: PKGBUILD.release
-        #   artifact: lr2oraja-endlessdream
+            condition: git-build
+          - variant: release
+            pkgbuild: PKGBUILD.release
+            artifact: lr2oraja-endlessdream
+            condition: release-build
 
     name: Build (${{ matrix.artifact }})
 
     steps:
+      - name: Check build condition
+        id: should-build
+        run: |
+          if [ "${{ needs.detect-changes.outputs[matrix.condition] }}" = "true" ]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+          else
+            echo "build=false" >> $GITHUB_OUTPUT
+          fi
+      
       - name: Checkout repository
+        if: steps.should-build.outputs.build == 'true'
         uses: actions/checkout@v4
       
       - name: Setup build environment
+        if: steps.should-build.outputs.build == 'true'
         run: |
           # install jdk 17 for building
           pacman --sync --refresh --sysupgrade --noconfirm jdk17-openjdk
@@ -46,6 +83,7 @@ jobs:
           chown -R builduser:builduser /home/builduser/.gradle
       
       - name: Cache Gradle dependencies
+        if: steps.should-build.outputs.build == 'true'
         uses: actions/cache@v4
         with:
           path: /home/builduser/.gradle
@@ -55,14 +93,17 @@ jobs:
             ${{ runner.os }}-gradle-
       
       - name: Fix cache permissions
+        if: steps.should-build.outputs.build == 'true'
         run: |
           chown -R builduser:builduser /home/builduser/.gradle || true
       
       - name: Build package
+        if: steps.should-build.outputs.build == 'true'
         run: |
           sudo -u builduser bash -c 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm -p ${{ matrix.pkgbuild }}'
       
       - name: Upload package artifact
+        if: steps.should-build.outputs.build == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
