@@ -1,0 +1,12 @@
+# IDE
+.idea/
+
+# Build directories
+src/
+lr2oraja-endlessdream/
+
+# External sources
+*.tar.gz
+
+# Build artifacts
+*.tar.zst
