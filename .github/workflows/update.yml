@@ -13,13 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      
       - name: Setup build environment
         run: |
           # install and configure git
@@ -33,10 +28,13 @@ jobs:
           
           # create build user
           useradd -d /home/builduser -m -G wheel builduser
-          
-          # fix up permissions
-          chown -R builduser:builduser .
-      
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.PAT || github.token }}
+
       - name: Check for upstream updates
         id: check
         run: |
@@ -44,7 +42,7 @@ jobs:
           git fetch origin
           
           LOCAL=$(git rev-parse HEAD)
-          REMOTE=$(git rev-parse origin/master)
+          REMOTE=$(git rev-parse origin/main)
           
           if [ "$LOCAL" != "$REMOTE" ]; then
             echo "has_updates=true" >> $GITHUB_OUTPUT
@@ -52,15 +50,16 @@ jobs:
           else
             echo "has_updates=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Trigger package rebuild
         if: steps.check.outputs.has_updates == 'true'
         run: |
           # update submodule to latest
-          (cd upstream && git checkout master && git pull origin master)
+          (cd upstream && git checkout main && git pull origin main)
           
           # update pkgver & submodule
-          sudo -u builduser bash -c 'makepkg --nobuild'
+          chown -R builduser:builduser .
+          sudo -u builduser bash -c 'makepkg --nobuild --nodeps'
           git add upstream PKGBUILD
           
           # commit to trigger package rebuild
