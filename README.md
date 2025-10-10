@@ -27,9 +27,7 @@ JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm -p PKGBUILD.release
 ```
 
-Alternatively, grab a pre-built version from CI artifacts:
-- [lr2oraja-endlessdream](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/lr2oraja-endlessdream/master)
-- [lr2oraja-endlessdream-git](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/lr2oraja-endlessdream-git/master)
+Alternatively, grab a [pre-built version](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/build/master?preview) from CI artifacts and install with `pacman -U`
 
 ### Usage
 
