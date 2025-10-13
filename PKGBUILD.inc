@@ -5,78 +5,56 @@ arch=('x86_64')
 url="https://github.com/seraxis/lr2oraja-endlessdream"
 license=('GPL-3.0-only')
 depends=('bash' 'java-runtime>=17')
-makedepends=('java-environment=17' 'portaudio' 'git' 'cmake' 'gcc')
+makedepends=('gradle' 'java-environment>=17' 'portaudio' 'git' 'cmake' 'gcc')
 optdepends=('portaudio: enables low-latency audio output options'
             'gamescope: workaround for crashes on nvidia wayland environments')
-_javafx_version="17.0.10"
+_javafx_version="21.0.8"
 _portaudio_java_commit="2ec5cc47d6f8abe85ddb09c34e69342bfe72c60b"
 _common_sources=("https://github.com/philburk/portaudio-java/archive/${_portaudio_java_commit}.tar.gz"
                  "${_pkgbase}.sh"
                  "${_pkgbase}.desktop"
-                 "${_pkgbase}-icon.png")
+                 "${_pkgbase}-icon.png"
+                 "MainLoaderEntrypoint.java")
 _common_sha256sums=('7a70d90d449fc9d91026c54e1d08303242749475ad20b30b5bfa45fc93f18043'
-                    'SKIP'
+                    '1fef3d549767888b37f25e4c57b729fda14671d33479f9403de2685a97d1aa6e'
                     'bfa611672d6926830edc33d7845ce1430b415cf42325f565e609dc6997dcb3f9'
-                    'fdbd37ff43aa6af20f9eb643bf271a77ef579014970a7a3dcecf78e65123d83d')
+                    'fdbd37ff43aa6af20f9eb643bf271a77ef579014970a7a3dcecf78e65123d83d'
+                    '95c603669e6a4864060fc976be349e345a8f320606286f7a830021243ababedb')
 
 _prepare() {
   cd "${srcdir}/${_pkgbase}"
   git submodule update --init --recursive
 
-  # add JavaFX to [versions] in gradle/libs.versions.toml
-  sed -i "/^endlessdream = /a javafx = \"${_javafx_version}\"" gradle/libs.versions.toml
-  
-  # add JavaFX to [libraries] in gradle/libs.versions.toml
-  sed -i '/^gdx-core = /i \
-javafx-base = { group = "org.openjfx", name = "javafx-base", version.ref = "javafx" }\
-javafx-controls = { group = "org.openjfx", name = "javafx-controls", version.ref = "javafx" }\
-javafx-fxml = { group = "org.openjfx", name = "javafx-fxml", version.ref = "javafx" }\
-javafx-graphics = { group = "org.openjfx", name = "javafx-graphics", version.ref = "javafx" }\
-' gradle/libs.versions.toml
-  
-  # add JavaFX to [bundles] in gradle/libs.versions.toml
-  printf '\njavafx = ["javafx-base", "javafx-controls", "javafx-fxml", "javafx-graphics"]' >> gradle/libs.versions.toml
-  
-  # add JavaFX dependencies to core/build.gradle.kts
+  # fix for build error on gradle 9.x
+  sed -i 's/id("org.gradle.kotlin.kotlin-dsl") version "4.2.1"/id("org.gradle.kotlin.kotlin-dsl") version "6.2.0"/' buildSrc/build.gradle.kts
+
+  # embed javafx into jar - not ideal, but i'd rather not rely on other AUR packages
+  sed -i "/kotlin = \"1.9.20\"/a javafx = \"${_javafx_version}\"" gradle/libs.versions.toml
+  sed -i '/id("application")/a \    id("org.openjfx.javafxplugin") version "0.1.0"' core/build.gradle.kts
   sed -i '/^dependencies {/a \
-    implementation(libs.bundles.javafx)\
-    \
-    implementation("org.openjfx:javafx-base:${libs.versions.javafx.get()}:linux")\
-    implementation("org.openjfx:javafx-controls:${libs.versions.javafx.get()}:linux")\
-    implementation("org.openjfx:javafx-fxml:${libs.versions.javafx.get()}:linux")\
-    implementation("org.openjfx:javafx-graphics:${libs.versions.javafx.get()}:linux")\
-' core/build.gradle.kts
-  
-  # create wrapper entrypoint for MainLoader
-  mkdir -p core/src/bms/player/beatoraja
-  cat > core/src/bms/player/beatoraja/MainLoaderEntrypoint.java << 'EOF'
-package bms.player.beatoraja;
+    javafx { \
+        version = libs.versions.javafx.get() \
+        modules = listOf("javafx.base", "javafx.graphics", "javafx.controls", "javafx.fxml") \
+    }' core/build.gradle.kts
 
-public class MainLoaderEntrypoint {
-
-    public static void main(String[] args) {
-        MainLoader.main(args);
-    }
-}
-EOF
+  # copy javafx wrapper class for main loader
+  cp "${srcdir}/MainLoaderEntrypoint.java" \
+     "${srcdir}/${_pkgbase}/core/src/bms/player/beatoraja/"
 }
 
 _build() {
-  # check for a usable build environment
-  if [[ -z "${JAVA_HOME}" ]]; then
-    echo "error: set JAVA_HOME to a Java 17 installation before building"
-    echo "       e.g. 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg'"
-    return 1
-  fi
+  cd "${srcdir}/${_pkgbase}"
 
   # build native dependencies
-  cd "${srcdir}/portaudio-java-${_portaudio_java_commit}"
-  cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .
-  cmake --build .
+  JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/default} \
+  cmake \
+    -S "${srcdir}/portaudio-java-${_portaudio_java_commit}" \
+    -B "${srcdir}/portaudio-java-build" \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  cmake --build "${srcdir}/portaudio-java-build"
 
-  # build game using gradle wrapper
-  cd "${srcdir}/${_pkgbase}"
-  PATH="${JAVA_HOME}/bin:${PATH}" ./gradlew -Dplatform=linux core:shadowJar
+  # build game with gradle
+  gradle --no-daemon -Dplatform=linux core:shadowJar
 }
 
 _package() {
@@ -85,24 +63,24 @@ _package() {
   # launcher script
   install -Dm755 "${srcdir}/${_pkgbase}.sh" \
     "${pkgdir}/usr/bin/${_pkgbase}"
-  
+
   # main game executable
-  install -Dm644 dist/lr2oraja-*.jar \
+  install -Dm644 dist/lr2oraja-*-endlessdream-linux-*.jar \
     "${pkgdir}/usr/share/java/${_pkgbase}.jar"
-  
+
   # default game assets
   install -dm755 "${pkgdir}/usr/share/${_pkgbase}"
   cp -r assets/* "${pkgdir}/usr/share/${_pkgbase}/"
   rm -f "${pkgdir}/usr/share/${_pkgbase}"/beatoraja-config*
 
   # portaudio-java native library
-  install -Dm644 "${srcdir}/portaudio-java-${_portaudio_java_commit}/libjportaudio_0_1_0.so" \
+  install -Dm644 "${srcdir}/portaudio-java-build/libjportaudio_0_1_0.so" \
     "${pkgdir}/usr/share/${_pkgbase}/natives/libjportaudio.so"
 
   # desktop application icon
   install -Dm644 "${srcdir}/${_pkgbase}-icon.png" \
     "${pkgdir}/usr/share/pixmaps/${_pkgbase}-icon.png"
-  
+
   # desktop application entry
   install -Dm644 "${srcdir}/${_pkgbase}.desktop" \
     "${pkgdir}/usr/share/applications/${_pkgbase}.desktop"

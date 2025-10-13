@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  detect-changes:
+  detect:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       git-build: ${{ steps.filter.outputs.git-build }}
@@ -30,9 +31,9 @@ jobs:
               - 'PKGBUILD.inc'
 
   build:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.git-build == 'true'
-      || needs.detect-changes.outputs.release-build == 'true'
+    if: github.event_name == 'workflow_dispatch'
+     || needs.detect.outputs.git-build == 'true'
+     || needs.detect.outputs.release-build == 'true'
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
@@ -55,7 +56,7 @@ jobs:
       - name: Check build condition
         id: should-build
         run: |
-          if [ "${{ needs.detect-changes.outputs[matrix.condition] }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ needs.detect.outputs[matrix.condition] }}" = "true" ]; then
             echo "build=true" >> $GITHUB_OUTPUT
           else
             echo "build=false" >> $GITHUB_OUTPUT
@@ -68,8 +69,8 @@ jobs:
       - name: Setup build environment
         if: steps.should-build.outputs.build == 'true'
         run: |
-          # install jdk 17 for building
-          pacman --sync --refresh --sysupgrade --noconfirm jdk17-openjdk
+          # install latest jdk for building
+          pacman --sync --refresh --sysupgrade --noconfirm jdk-openjdk
 
           # enable passwordless sudo
           echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/99-nopasswd
@@ -100,7 +101,7 @@ jobs:
       - name: Build package
         if: steps.should-build.outputs.build == 'true'
         run: |
-          sudo -u builduser bash -c 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm -p ${{ matrix.pkgbuild }}'
+          sudo -u builduser bash -c 'makepkg --syncdeps --noconfirm -p ${{ matrix.pkgbuild }}'
 
       - name: Upload package artifact
         if: steps.should-build.outputs.build == 'true'

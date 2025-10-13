@@ -2,29 +2,27 @@
 
 Yet another Arch Linux package for [LR2oraja Endless Dream](https://github.com/seraxis/lr2oraja-endlessdream)
 
-### Differences to the [AUR package](https://aur.archlinux.org/packages/lr2oraja-endlessdream)
-
 - Provides stable release and `-git` variants
 - Installs to standard `/usr/share` directories
 - Builds game and native JPortAudio library from source
 - Launching from desktop entry no longer opens a terminal
 - Includes basic launcher script with configurable options
-- Supports a wider range of Java runtimes by bundling JavaFX
+- Can be built and run with a wider range of Java environments
 - Uses `~/.config/lr2oraja-endlessdream/` directory for configuration
 - Does not include any custom themes or external internet ranking services
 
 ### Building
 
-Ensure `JAVA_HOME` is set to a compatible JDK, then run `makepkg`
+Install a compatible JDK, then run `makepkg`
 
 ```bash
-pacman --sync --refresh --sysupgrade --noconfirm jdk17-openjdk
+pacman --sync --refresh --sysupgrade jdk-openjdk
 
 # lr2oraja-endlessdream-git
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm
+makepkg --syncdeps
 
 # lr2oraja-endlessdream
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk makepkg --syncdeps --noconfirm -p PKGBUILD.release
+makepkg --syncdeps -p PKGBUILD.release
 ```
 
 Alternatively, grab a [pre-built version](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/build/master?preview) from CI artifacts and install with `pacman -U`
@@ -35,11 +33,7 @@ On first boot, the default configuration will be created in `~/.config/lr2oraja-
 
 To install a custom IR, create the `ir` directory and copy the .jar file into it, e.g.
 
-```bash
-curl -LO https://github.com/zkrising/tachi-beatoraja-ir/releases/download/v3.1.1/bokutachiIR-3.1.1.jar
-mkdir -vp ~/.config/lr2oraja-endlessdream/ir
-mv -v bokutachiIR-3.1.1.jar ~/.config/lr2oraja-endlessdream/ir/
-```
+- [bokutachiIR-X.X.X.jar](https://github.com/zkrising/tachi-beatoraja-ir/releases) → `~/.config/lr2oraja-endlessdream/ir/bokutachiIR-X.X.X.jar`
 
 If you want to use a different directory, set the `BEATORAJA_USER_DIR` variable
 
