@@ -70,7 +70,6 @@ setup_default_assets
 # launch the game!
 JDK_JAVA_OPTIONS=$(build_java_options) \
 exec java \
-  -Djdk.gtk.version=2 \
   -Xms"${JAVA_HEAP_MIN:-1g}" \
   -Xmx"${JAVA_HEAP_MAX:-4g}" \
   -cp /usr/share/java/${BEATORAJA_VARIANT}.jar:ir/* \
