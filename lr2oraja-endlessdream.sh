@@ -43,6 +43,9 @@ setup_default_assets() {
     mkdir -p "${BEATORAJA_USER_DIR}/skin"
     ln -s "${skin_src}" "${skin_dst}"
   fi
+
+  # create empty directories if needed
+  mkdir -p "${BEATORAJA_USER_DIR}/table"
 }
 
 # pull in additional java options from JDK_JAVA_OPTIONS
