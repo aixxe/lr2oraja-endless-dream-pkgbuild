@@ -72,6 +72,7 @@ JDK_JAVA_OPTIONS=$(build_java_options) \
 exec java \
   -Xms"${JAVA_HEAP_MIN:-1g}" \
   -Xmx"${JAVA_HEAP_MAX:-4g}" \
+  --enable-native-access=ALL-UNNAMED \
   -cp /usr/share/java/${BEATORAJA_VARIANT}.jar:ir/* \
   bms.player.beatoraja.MainLoaderEntrypoint \
   "$@"
