@@ -31,7 +31,7 @@ Alternatively, grab a [pre-built version](https://nightly.link/aixxe/lr2oraja-en
 
 On first boot, the default configuration will be created in `~/.config/lr2oraja-endlessdream/`
 
-To install a custom IR, create the `ir` directory and copy the .jar file into it, e.g.
+To install a custom IR, copy the .jar file into the `ir` directory, e.g.
 
 - [bokutachiIR-X.X.X.jar](https://github.com/zkrising/tachi-beatoraja-ir/releases) → `~/.config/lr2oraja-endlessdream/ir/bokutachiIR-X.X.X.jar`
 

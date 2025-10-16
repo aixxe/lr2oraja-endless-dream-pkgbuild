@@ -45,7 +45,7 @@ setup_default_assets() {
   fi
 
   # create empty directories if needed
-  mkdir -p "${BEATORAJA_USER_DIR}/table"
+  mkdir -p "${BEATORAJA_USER_DIR}/{ir,table}"
 }
 
 # pull in additional java options from JDK_JAVA_OPTIONS
