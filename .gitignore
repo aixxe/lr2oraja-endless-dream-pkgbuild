@@ -6,6 +6,7 @@ src/
 lr2oraja-endlessdream/
 
 # External sources
+124.patch
 *.tar.gz
 
 # Build artifacts
