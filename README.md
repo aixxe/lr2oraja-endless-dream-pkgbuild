@@ -13,11 +13,7 @@ Yet another Arch Linux package for [LR2oraja Endless Dream](https://github.com/s
 
 ### Building
 
-Install a compatible JDK, then run `makepkg`
-
 ```bash
-pacman --sync --refresh --sysupgrade jdk-openjdk
-
 # lr2oraja-endlessdream-git
 makepkg --syncdeps
 
@@ -25,7 +21,7 @@ makepkg --syncdeps
 makepkg --syncdeps -p PKGBUILD.release
 ```
 
-Alternatively, grab a [pre-built version](https://nightly.link/aixxe/lr2oraja-endless-dream-pkgbuild/workflows/build/master?preview) from CI artifacts and install with `pacman -U`
+Alternatively, grab a [pre-built version](https://github.com/aixxe/lr2oraja-endlessdream-pkgbuild/actions/workflows/build.yml) from CI artifacts and install with `pacman -U`
 
 ### Usage
 
